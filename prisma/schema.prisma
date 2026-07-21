@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AssetType {
+  STOCK
+  ETF
+  CRYPTO
+  CASH
+  BOND
+  OTHER
+}
+
+enum TransactionSide {
+  BUY
+  SELL
+  DEPOSIT
+  WITHDRAWAL
+  FEE
+  DIVIDEND
+}
+
+enum Market {
+  TW
+  US
+  CRYPTO
+  CASH
+  OTHER
+}
+
+model Asset {
+  id          String   @id @default(cuid())
+  symbol      String
+  name        String
+  type        AssetType
+  currency    String   @default("TWD")
+  market      Market
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  transactions Transaction[]
+  prices       Price[]
+  @@unique([symbol, market])
+  @@index([name])
+}
+
+model Transaction {
+  id        String          @id @default(cuid())
+  date      DateTime
+  assetId   String
+  side      TransactionSide
+  unitPrice Decimal         @db.Decimal(20, 8)
+  quantity  Decimal         @db.Decimal(20, 8)
+  fee       Decimal         @default(0) @db.Decimal(20, 8)
+  tax       Decimal         @default(0) @db.Decimal(20, 8)
+  currency  String
+  note      String?
+  createdAt DateTime        @default(now())
+  asset     Asset           @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  @@index([assetId, date])
+}
+
+model Price {
+  id        String   @id @default(cuid())
+  assetId   String
+  price     Decimal  @db.Decimal(20, 8)
+  currency  String
+  source    String
+  capturedAt DateTime @default(now())
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  @@unique([assetId, capturedAt])
+  @@index([assetId, capturedAt])
+}
+
+model DailySnapshot {
+  id          String   @id @default(cuid())
+  date        DateTime @unique @db.Date
+  totalValue  Decimal  @db.Decimal(20, 2)
+  cashValue   Decimal  @db.Decimal(20, 2)
+  stockValue  Decimal  @db.Decimal(20, 2)
+  etfValue    Decimal  @db.Decimal(20, 2)
+  cryptoValue Decimal  @db.Decimal(20, 2)
+  otherValue  Decimal  @db.Decimal(20, 2)
+  createdAt   DateTime @default(now())
+}
+
+model DailyInsight {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  summary   String
+  payload   Json?
+  createdAt DateTime @default(now())
+}

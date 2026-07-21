@@ -1,0 +1,4 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base { :root { --canvas: 220 18% 97%; --panel: 0 0% 100%; --ink: 224 30% 12%; --muted: 220 10% 45%; --line: 220 16% 90%; --accent: 222 80% 54%; } .dark { --canvas: 225 20% 7%; --panel: 225 19% 11%; --ink: 210 40% 96%; --muted: 218 13% 62%; --line: 222 16% 20%; --accent: 217 92% 62%; } * { @apply border-line; } body { @apply bg-canvas text-ink antialiased; } }
