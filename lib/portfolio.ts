@@ -1,8 +1,8 @@
-import { AssetType, TransactionSide } from "@prisma/client";
+import { AssetType, Market, TransactionSide } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { toTwd } from "@/lib/fx";
 
-export type Holding = { id: string; symbol: string; name: string; type: AssetType; quantity: number; averageCost: number; cost: number; price: number; value: number; unrealized: number; realized: number; returnRate: number; dailyChange: number };
+export type Holding = { id: string; symbol: string; name: string; type: AssetType; market: Market; quantity: number; averageCost: number; cost: number; price: number; value: number; unrealized: number; realized: number; returnRate: number; dailyChange: number };
 const n = (x: { toString(): string } | number) => Number(x.toString());
 const taipeiDay = (date: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
 export async function getHoldings(): Promise<Holding[]> {
@@ -27,7 +27,7 @@ export async function getHoldings(): Promise<Holding[]> {
     const price = asset.type === AssetType.CASH ? 1 : currentPrice ? await toTwd(n(currentPrice.price), currentPrice.currency, currentPrice.capturedAt) : 0;
     const previous = asset.type === AssetType.CASH ? 1 : comparisonPrice ? await toTwd(n(comparisonPrice.price), comparisonPrice.currency, comparisonPrice.capturedAt) : price;
     const value = quantity * price, averageCost = quantity ? cost / quantity : 0;
-    return { id: asset.id, symbol: asset.symbol, name: asset.name, type: asset.type, quantity, averageCost, cost, price, value, unrealized: value - cost, realized, returnRate: cost ? ((value - cost) / cost) * 100 : 0, dailyChange: previous ? ((price - previous) / previous) * 100 : 0 };
+    return { id: asset.id, symbol: asset.symbol, name: asset.name, type: asset.type, market: asset.market, quantity, averageCost, cost, price, value, unrealized: value - cost, realized, returnRate: cost ? ((value - cost) / cost) * 100 : 0, dailyChange: previous ? ((price - previous) / previous) * 100 : 0 };
   }));
 }
 export async function getPortfolio() {
