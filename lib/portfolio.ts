@@ -23,10 +23,10 @@ export async function getHoldings(): Promise<Holding[]> {
     // last price saved before today (the previous market close); crypto is
     // compared with the dedicated Taiwan-midnight point saved by the job.
     const today = taipeiDay(new Date());
-    const currentPrice = asset.prices.find((item) => item.source.startsWith("current:")) ?? asset.prices[0];
+    const currentPrice = asset.prices.find((item) => item.source.startsWith("current:") && taipeiDay(item.capturedAt) === today) ?? asset.prices[0];
     const comparisonPrice = asset.type === AssetType.CRYPTO
       ? asset.prices.find((item) => item.source === "crypto:midnight" && taipeiDay(item.capturedAt) === today)
-      : asset.prices.find((item) => taipeiDay(item.capturedAt) < today);
+      : asset.prices.find((item) => !item.source.startsWith("current:") && taipeiDay(item.capturedAt) < today);
     const price = asset.type === AssetType.CASH ? 1 : currentPrice ? await toTwd(n(currentPrice.price), currentPrice.currency, currentPrice.capturedAt) : 0;
     const previous = asset.type === AssetType.CASH ? 1 : comparisonPrice ? await toTwd(n(comparisonPrice.price), comparisonPrice.currency, comparisonPrice.capturedAt) : price;
     const value = quantity * price, averageCost = quantity ? cost / quantity : 0;

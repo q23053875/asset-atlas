@@ -1,0 +1,26 @@
+UPDATE "Asset"
+SET "category" = CASE UPPER("symbol")
+  WHEN '2330' THEN '晶圓代工／半導體'
+  WHEN '8112' THEN '電子通路'
+  WHEN '5243' THEN '電子零組件／機構件'
+  WHEN '3029' THEN '資訊服務／系統整合'
+  WHEN '2883' THEN '金融控股'
+  WHEN '0050' THEN '台灣大型權值 ETF'
+  WHEN '00919' THEN '台股高股息 ETF'
+  WHEN '00403A' THEN '主動式台股 ETF'
+  WHEN 'NVDA' THEN 'AI／半導體'
+  WHEN 'OXY' THEN '石油／天然氣'
+  WHEN 'FANG' THEN '石油／天然氣'
+  WHEN 'LMT' THEN '軍工／國防航太'
+  WHEN 'RTX' THEN '軍工／國防航太'
+  WHEN 'SPCX' THEN '太空／航太'
+  WHEN 'BTC' THEN '比特幣'
+  WHEN 'ETH' THEN '以太坊主網原生幣'
+  WHEN 'ADA' THEN 'Cardano 生態系原生幣'
+  WHEN 'BNB' THEN '幣安生態系原生加密貨幣'
+  WHEN 'XPL' THEN '穩定幣支付 Layer 1'
+  WHEN 'MITO' THEN 'DeFi／流動性協議'
+  WHEN 'SPCXB' THEN '代幣化私募股權／太空'
+  WHEN 'USDT' THEN '美元穩定幣'
+  ELSE "category"
+END;
