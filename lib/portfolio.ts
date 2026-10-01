@@ -19,16 +19,15 @@ export async function getHoldings(): Promise<Holding[]> {
       if (tx.side === TransactionSide.SELL || tx.side === TransactionSide.WITHDRAWAL) { const avg = quantity ? cost / quantity : 0; realized += q * unit - fees - q * avg; cost -= q * avg; quantity -= q; }
       if (tx.side === TransactionSide.DIVIDEND) realized += q * unit - fees;
     }
-    // A refresh creates a `current:` point.  Stocks/ETFs are compared with the
-    // last price saved before today (the previous market close); crypto is
-    // compared with the dedicated Taiwan-midnight point saved by the job.
+    // Each refresh saves explicit comparison points. Stocks/ETFs use the
+    // provider's prior trading-day close; crypto uses Taiwan midnight.
     const today = taipeiDay(new Date());
     const currentPrice = asset.prices.find((item) => item.source.startsWith("current:") && taipeiDay(item.capturedAt) === today) ?? asset.prices[0];
     const comparisonPrice = asset.type === AssetType.CRYPTO
       ? asset.prices.find((item) => item.source === "crypto:midnight" && taipeiDay(item.capturedAt) === today)
-      : asset.prices.find((item) => !item.source.startsWith("current:") && taipeiDay(item.capturedAt) < today);
+      : asset.prices.find((item) => item.source === "market:previous-close" && taipeiDay(item.capturedAt) === today);
     const price = asset.type === AssetType.CASH ? 1 : currentPrice ? await toTwd(n(currentPrice.price), currentPrice.currency, currentPrice.capturedAt) : 0;
-    const previous = asset.type === AssetType.CASH ? 1 : comparisonPrice ? await toTwd(n(comparisonPrice.price), comparisonPrice.currency, comparisonPrice.capturedAt) : price;
+    const previous = asset.type === AssetType.CASH ? 1 : comparisonPrice ? await toTwd(n(comparisonPrice.price), comparisonPrice.currency, comparisonPrice.capturedAt) : undefined;
     const value = quantity * price, averageCost = quantity ? cost / quantity : 0;
     return { id: asset.id, symbol: asset.symbol, name: asset.name, type: asset.type, market: asset.market, category: inferAssetCategory(asset), quantity, averageCost, cost, price, value, unrealized: value - cost, realized, returnRate: cost ? ((value - cost) / cost) * 100 : 0, dailyChange: previous ? ((price - previous) / previous) * 100 : 0 };
   }));

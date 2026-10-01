@@ -17,10 +17,15 @@ export async function runDailyJob() {
   const today = taipeiCalendarDate();
   const assets = await prisma.asset.findMany({ where: { isActive: true, type: { not: AssetType.CASH } } });
   const currentPoint = new Date(today.getTime() + 1);
+  const previousClosePoint = new Date(today.getTime() + 2);
   const midnight = taipeiMidnight();
   const updates = await Promise.allSettled(assets.map(async (asset) => {
     const quote = await providerFor(asset.market).getQuote(asset.symbol);
     await prisma.price.upsert({ where: { assetId_capturedAt: { assetId: asset.id, capturedAt: currentPoint } }, update: { price: quote.price, currency: quote.currency, source: `current:${quote.source}` }, create: { assetId: asset.id, price: quote.price, currency: quote.currency, source: `current:${quote.source}`, capturedAt: currentPoint } });
+    if (asset.market === "TW" || asset.market === "US") {
+      if (!quote.previousClose || quote.previousClose <= 0) throw new Error(`Previous close unavailable for ${asset.symbol}`);
+      await prisma.price.upsert({ where: { assetId_capturedAt: { assetId: asset.id, capturedAt: previousClosePoint } }, update: { price: quote.previousClose, currency: quote.currency, source: "market:previous-close" }, create: { assetId: asset.id, price: quote.previousClose, currency: quote.currency, source: "market:previous-close", capturedAt: previousClosePoint } });
+    }
     if (asset.type === AssetType.CRYPTO) {
       const midnightQuote = await new BinanceProvider().getTaipeiMidnightPrice(asset.symbol, midnight);
       await prisma.price.upsert({ where: { assetId_capturedAt: { assetId: asset.id, capturedAt: midnight } }, update: { price: midnightQuote.price, currency: midnightQuote.currency, source: "crypto:midnight" }, create: { assetId: asset.id, price: midnightQuote.price, currency: midnightQuote.currency, source: "crypto:midnight", capturedAt: midnight } });
