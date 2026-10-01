@@ -23,8 +23,9 @@ export async function runDailyJob() {
     const quote = await providerFor(asset.market).getQuote(asset.symbol);
     await prisma.price.upsert({ where: { assetId_capturedAt: { assetId: asset.id, capturedAt: currentPoint } }, update: { price: quote.price, currency: quote.currency, source: `current:${quote.source}` }, create: { assetId: asset.id, price: quote.price, currency: quote.currency, source: `current:${quote.source}`, capturedAt: currentPoint } });
     if (asset.market === "TW" || asset.market === "US") {
-      if (!quote.previousClose || quote.previousClose <= 0) throw new Error(`Previous close unavailable for ${asset.symbol}`);
-      await prisma.price.upsert({ where: { assetId_capturedAt: { assetId: asset.id, capturedAt: previousClosePoint } }, update: { price: quote.previousClose, currency: quote.currency, source: "market:previous-close" }, create: { assetId: asset.id, price: quote.previousClose, currency: quote.currency, source: "market:previous-close", capturedAt: previousClosePoint } });
+      if (quote.previousClose && quote.previousClose > 0) {
+        await prisma.price.upsert({ where: { assetId_capturedAt: { assetId: asset.id, capturedAt: previousClosePoint } }, update: { price: quote.previousClose, currency: quote.currency, source: "market:previous-close" }, create: { assetId: asset.id, price: quote.previousClose, currency: quote.currency, source: "market:previous-close", capturedAt: previousClosePoint } });
+      }
     }
     if (asset.type === AssetType.CRYPTO) {
       const midnightQuote = await new BinanceProvider().getTaipeiMidnightPrice(asset.symbol, midnight);
